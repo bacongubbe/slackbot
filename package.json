@@ -1,0 +1,19 @@
+{
+  "name": "slackbot",
+  "version": "0.0.1",
+  "description": "Slack bot that tells people to keep it english",
+  "main": "src",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node ."
+  },
+  "author": "bacongubbe",
+  "license": "ISC",
+  "dependencies": {
+    "@slack/rtm-api": "^6.1.0",
+    "@slack/web-api": "^6.8.1",
+    "dotenv": "^16.0.3",
+    "esm": "^3.2.25",
+    "languagedetect": "^2.0.0"
+  }
+}
