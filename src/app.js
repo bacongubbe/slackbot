@@ -19,13 +19,25 @@ rtm.on('slack_event', async (_, event) => {
         console.log(event)
         const languages = lngDetector.detect(event.text)
         const swedish = languages.find(lang => lang[0] === 'swedish')
-        if(swedish && swedish[1] > 0.3){
+        const dutch = languages.find(lang => lang[0] === 'dutch')
+        let lang = null;
+        if(swedish && dutch){
+            lang = swedish[1] > dutch[1] ? swedish : dutch;
+        }
+        if(swedish && !dutch){
+            lang = swedish
+        }
+        if(dutch && !swedish){
+            lang = dutch
+        }
+
+        if(lang && lang[1] > 0.3){
             react(event.channel, event.ts)
             if (event.thread_ts){
-                respondInThread(event.channel, event.thread_ts,`That's not looking very english to me <@${event.user}>`);
+                respondInThread(event.channel, event.thread_ts,`That's not looking very english to me <@${event.user}>, stop speaking ${lang[0]}`);
                 return;
             }
-        respondInThread(event.channel, event.ts, `That's not looking very english to me <@${event.user}>`)
+        respondInThread(event.channel, event.ts, `That's not looking very english to me <@${event.user}>, stop speaking ${lang[0]}`)
         }
     }
 })
