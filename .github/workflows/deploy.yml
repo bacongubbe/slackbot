@@ -1,4 +1,4 @@
-name: Deploy to AWS Lambda
+name: Deploy to AWS
 
 on:
   push:
@@ -8,32 +8,41 @@ on:
       - 'README.md'
       - '.github/workflows/**'
 
-jobs:
-  deploy:
+jobs: 
+  build-and-deploy:
     runs-on: ubuntu-latest
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v2
-
       - name: Setup Node.js
         uses: actions/setup-node@v2
         with:
           node-version: '18.x'
-
       - name: Install dependencies
         run: npm install
 
       - name: Build
         run: npm run build
 
-      - name: Deploy
-        uses: einaregilsson/aws-lambda-deploy@v1.0.1
+      - name: Configure AWS Credentials
+        if: success()
+        uses: aws-actions/configure-aws-credentials@v1
         with:
-          zip_file: dist.zip
-          function_name: slackbot-constable
-          handler: index.handler
-          runtime: nodejs18.x
-          aws_access_key_id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws_secret_access_key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          region: eu-north-1
+          aws-access-key-id: ${{ secrets.ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.SECRET_ACCESS_KEY }}
+          aws-region: "eu-north-1"
+      - name: Create ZIP file
+        run: zip -r slackbot.zip . -x "*.zip" -x "*.git*" -x "*.DS_Store*" -x "*.zipignore"
+      - name: Upload to S3 Bucket
+        if: success()
+        run: aws s3 cp slackbot.zip s3://slackbot-constable/
+      - name: Create new Elastic Beanstalk Application Version
+        run: |
+          aws elasticbeanstalk create-application-version \
+          --application-name slackBot \
+          --source-bundle S3Bucket="slackbot-constable",S3Key="slackbot.zip" \
+          --version-label "ver-${{ github.sha }}" \
+          --description "commit-sha-${{ github.sha }}"
+      - name: Deploy to Elastic Beanstalk
+        if: success()
+        run: aws elasticbeanstalk update-environment --environment-name Slackbot-env --version-label "ver-${{ github.sha }}"
