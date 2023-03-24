@@ -42,4 +42,4 @@ const messages = [
 export const getRandomMessage = (user, lang) => {
     const template = messages[Math.floor(Math.random() * messages.length)];
     return template(user, lang);
-}
+};
