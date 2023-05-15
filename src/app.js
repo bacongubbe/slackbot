@@ -16,8 +16,8 @@ rtm.on('ready', async () => {
 });
 
 rtm.on('slack_event', async (_, event) => {
-    if (event && event.type === 'message' && event.subtype !== 'bot_message'){
-        console.log(event)
+    if (event && event.type === 'message' && event.subtype !== 'bot_message' && event.subtype !== 'message_replied'){
+        illegalWordCheck(event);
         const languages = lngDetector.detect(event.text)
         const swedish = languages.find(lang => lang[0] === 'swedish')
         const dutch = languages.find(lang => lang[0] === 'dutch')
@@ -33,13 +33,14 @@ rtm.on('slack_event', async (_, event) => {
         }
 
         if(lang && lang[1] > 0.3){
-            react(event.channel, event.ts)
+            react(event.channel, event.ts, 'wrong_language_arrest')
             if (event.thread_ts){
                 respondInThread(event.channel, event.thread_ts, getRandomMessage(event.user, lang[0]));
                 return;
             }
         respondInThread(event.channel, event.ts, getRandomMessage(event.user, lang[0]))
         }
+        
     }
 })
 
@@ -51,10 +52,18 @@ const respondInThread = async (channel, timestamp, message) => {
     })
 }
 
-const react = async (channel, post) => {
+const react = async (channel, post, reaction) => {
     await web.reactions.add({
         timestamp: post,
         channel: channel,
-        name: 'wrong_language_arrest'
+        name: reaction
     })
+}
+
+const illegalWordCheck = async (event) => {
+    console.log(event);
+    if (event.text.toLowerCase().includes("the bench") || event.text.toLowerCase().includes("bänken")) {
+        respondInThread(event.channel, event.thread_ts, 'We don\'t want to hear none of that language in here. Please call the PGP the PGP and nothing else.');
+        react(event.channel, event.ts, 'no-benches-arrest');
+    }
 }
